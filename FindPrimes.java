@@ -17,16 +17,23 @@ public class FindPrimes {
 		// Start looking for primes from the number 5
 		int candidate = 5;
 		int numPrimes = 0;
+		// We start our search from the number 6 which is 3 * 2.
+		int row = 3;
+		int col = 2;
 
 		while (numPrimes < n) {
-			// We start our search from the number 6 which is 3 * 2.
-			boolean found = search(candidate, 3, 2, NULL);
+			boolean found = search(candidate, row, col, NULL);
 			if (!found) {
 				System.out.println(candidate);
 				numPrimes++;
 			}
 			// Consider only odd numbers.
 			candidate += 2;
+			// Move our start position for the search to the left of the first
+			// number greater than the candidate.
+			while (candidate > row * (col+1)) {
+				col++;
+			}
 		}
 	}
 
