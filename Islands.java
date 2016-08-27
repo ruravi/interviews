@@ -2,6 +2,12 @@ import java.util.*;
 
 public class Islands {
 
+	private enum State {
+		IN,
+		OUT,
+		ALREADYSEEN,
+	}
+
 	/**
 	 * Input format:
 	 *  3 			// m num rows in matrix
@@ -25,25 +31,32 @@ public class Islands {
 
 		int num = 0;
 		for (int i = 0; i < m; i++) {
+			// For each row, we begin fresh.
+			State state = State.OUT;
 			for (int j = 0; j < n; j++) {
-				// We're going through this matrix row by row.
 				if (matrix[i][j] == 1) {
-					// When we see a 1, it could be the first 1 of it's island that we're
-					// seeing.
-					boolean isIndependent = true;
-					if (i > 0 && matrix[i-1][j] == 1) {
-						// But if it has a 1 above it, then we def have seen that 1 in
-						// a previous pass; and hence have counted that 1 towrds an island
-						isIndependent = false;
-					} 
-					if (j > 0 && matrix[i][j-1] == 1) {
-						// But if it has a 1 to the left of it, then we def have seen that 1 in
-						// a previous pass. and hence have counted that 1 towrds an island
-						isIndependent = false;
+					switch (state) {
+						case OUT:
+							// This is the first 1 in this row.
+							state = State.IN;
+							num++; // Optimistically count it as an island unless proven otherwise.
+							if (i > 0 && matrix[i-1][j] == 1) {
+								state = State.ALREADYSEEN;
+								num--;
+							}
+							break;
+						case IN:
+							// If this 1 is connected to a previously seen 1,
+							// then we need to decrement the count, since we would have
+							// incremented it when we saw the first 1 on this line.
+							if (i > 0 && matrix[i-1][j] == 1) {
+								state = State.ALREADYSEEN;
+								num--;
+							}
+							break;
 					}
-					if (isIndependent) {
-						num++;
-					}
+				} else {
+					state = State.OUT;
 				}
 			}
 		}
