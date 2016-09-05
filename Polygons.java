@@ -12,10 +12,10 @@ import java.util.*;
 public class Polygons {
 
 	private static class Point {
-		public int x;
-		public int y;
+		public double x;
+		public double y;
 
-		public Point(int x, int y) {
+		public Point(double x, double y) {
 			this.x = x;
 			this.y = y;
 		}
@@ -30,18 +30,18 @@ public class Polygons {
 	 */
 	private static boolean isOnEdgeOfPolygon(List<Point> polygon, Point test) {
 		int n = polygon.size();
-		int x = test.x;
-		int y = test.y;
+		double x = test.x;
+		double y = test.y;
 		for (int i = 0; i < n; i++) {
-			int x1 = polygon.get(i).x;
-			int y1 = polygon.get(i).y;
+			double x1 = polygon.get(i).x;
+			double y1 = polygon.get(i).y;
 
 			int j = (i+1) % n;
-			int x2 = polygon.get(j).x;
-			int y2 = polygon.get(j).y;
+			double x2 = polygon.get(j).x;
+			double y2 = polygon.get(j).y;
 
-			int lhs = (y - y1) * (x2 - x1);
-			int rhs = (x - x1) * (y2 - y1);
+			double lhs = (y - y1) * (x2 - x1);
+			double rhs = (x - x1) * (y2 - y1);
 
 			if (lhs == rhs) {
 				// Point lies on the line, now check if it lies on the line
@@ -58,8 +58,8 @@ public class Polygons {
 		return false;
 	}
 
-	private static int findLeastX(List<Point> points) {
-		int least = Integer.MAX_VALUE;
+	private static double findLeastX(List<Point> points) {
+		double least = Double.MAX_VALUE;
 		for (Point point : points) {
 			if (point.x < least) {
 				least = point.x;
@@ -68,8 +68,8 @@ public class Polygons {
 		return least;
 	}
 
-	private static int findGreatestX(List<Point> points) {
-		int greatest = Integer.MIN_VALUE;
+	private static double findGreatestX(List<Point> points) {
+		double greatest = Double.MIN_VALUE;
 		for (Point point : points) {
 			if (point.x > greatest) {
 				greatest = point.x;
@@ -79,16 +79,15 @@ public class Polygons {
 	}
 
 	private static boolean isInPolygon(List<Point> polygon, Point test) {
-		int startX = findLeastX(polygon);
-		int endX = findGreatestX(polygon);
+		double startX = findLeastX(polygon);
+		double endX = findGreatestX(polygon);
 
 		int numCrosses = 0;
 		while (startX <= endX && startX < test.x) {
-			System.out.println("Testing " + new Point(startX, test.y));
 			if (isOnEdgeOfPolygon(polygon, new Point(startX, test.y))) {
 				numCrosses++;
 			}
-			startX += 0.5;
+			startX += 0.001;
 		}
 
 		if (numCrosses % 2 == 1) {
