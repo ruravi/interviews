@@ -1,58 +1,97 @@
 import java.util.concurrent.*;
 import java.util.*;
 
+/**
+ * A server can process batches of 4 very efficiently. Batches of any other size take the
+ * same amount of time to process albeit very inefficiently. Write a function to process incoming
+ * requests with maximum throughput.
+ */
 class BufferRequestsContinuously {
 
-	private static final int N = 5;
+	private Queue<Integer> requests = new ArrayDeque<>();
+	private final ExecutorService pool = Executors.newFixedThreadPool(10);
 
-	public static void main(String[] args) throws Exception {
-		Consumer consumer = new Consumer();
-		CyclicBarrier cyclicBarrier = new CyclicBarrier(N,
-			new Runnable() {
+	private void produce() throws Exception {
+		Scanner scanner = new Scanner(System.in);
+		while (true) {
+			int n = scanner.nextInt();
+
+			pool.submit(new Runnable() {
 				public void run() {
-					System.out.println("Barrier broken");
-					consumer.process();
+					synchronized(requests) {
+						requests.offer(n);
+						// Notify consumer that it can consume.
+						requests.notify();
+					}
 				}
 			});
-
-		ExecutorService executorService = Executors.newFixedThreadPool(5);
-
-		Random rand = new Random();
-		for (int i = 0; i < 5; i++) {
-			executorService.submit(
-				new Runnable() {
-					public void run() {
-						int n = rand.nextInt(10);
-						try {
-							Thread.sleep(n * 1000);
-							System.out.println("Enqueuing...");
-							consumer.enqueue(10);
-							cyclicBarrier.await(5, TimeUnit.SECONDS);
-						} catch (Exception e) {
-							
-						}
-						System.out.println("Tired of waiting...");
-						consumer.process();
-					}
-				});
 		}
+	}
+
+	/**
+	 * Every time a new request comes in, we wait for a maximum timeout (eg. 10s)
+	 * If 3 other requests have come in within this timeout, we batch it.
+	 * If not, we process all requests that have come in within this timeout (< 4 requests)
+	 */
+	private void consume() throws Exception {
+		while(true) {
+			long timeRemaining = 10000; // 10 seconds.
+			synchronized(requests) {
+				if (requests.isEmpty()) {
+					// Wait till first item arrives.
+					requests.wait();
+				}
+
+				// Wait till a) buffer is full or 
+				// 			 b) 10s have passed since the first item arrived.
+				while (requests.size() != 4 && timeRemaining > 0) {
+					long start = System.currentTimeMillis();
+					requests.wait(timeRemaining);
+					// Another item has arrived.
+					System.out.println("Producer notified me. Queue size is now: "
+						+ requests.size());
+
+					// How long did I wait?
+					long waitedFor = System.currentTimeMillis() - start;
+					// If the buffer isn't full, I have to make sure I don't reset my timer.
+					timeRemaining -= waitedFor;
+					
+				}
+				// Consume everything in the queue, whether it's full or not.
+				while (!requests.isEmpty()) {
+					System.out.println("Consumer Consuming: " + requests.poll());
+				}
+			}
+		}
+
+	}
+
+	public static void main(String[] args) throws Exception {
+		BufferRequestsContinuously processor = new BufferRequestsContinuously();
+
+		Thread producer = new Thread(new Runnable() {
+			public void run() {
+				try {
+					processor.produce();
+				} catch (Exception e) {
+					
+				}
+				
+			}
+		});
+		producer.start();
+
+		Thread consumer = new Thread(new Runnable() {
+			public void run() {
+				try {
+					processor.consume();
+				} catch(Exception e) {
+					
+				}
+				
+			}
+		});
+		consumer.start();
 	}
 	
-}
-
-class Consumer {
-
-	private Queue<Integer> requests = new ArrayDeque<>();
-
-	public void enqueue(int a) {
-		requests.offer(a);
-	}
-
-	public void process() {
-		System.out.println("Processing " + requests.size() + " requests");
-		while (!requests.isEmpty()) {
-			requests.poll();
-		}
-	}
-
 }
