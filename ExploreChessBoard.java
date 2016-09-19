@@ -20,38 +20,54 @@ class ExploreChessBoard {
 		}
 	}
 
+	private static class Result {
+		public boolean exists;
+		public List<Point> solution = new ArrayList<>();
+	}
+
 	private static void explore(int n) {
 		for (int i = 0; i < n; i++) {
 			for (int j = 0; j < n; j++) {
 				boolean[][] visited = new boolean[n][n];
 				visited[i][j] = true;
-				if (exploreRecursive(i, j, n, visited, 1)) {
+				Result result = exploreRecursive(i, j, n, visited, 1);
+				if (result.exists) {
 					System.out.println("Solution exists from: " + i + "," + j);
+					for (Point each : result.solution) {
+						System.out.print("Move to " + each + "; ");
+					}
+					System.out.println();
 				}
 			}
 		}
 	}
 
-	private static boolean exploreRecursive(int i, int j, int n, boolean[][] visited, int numVisited) {
+	private static Result exploreRecursive(int i, int j, int n, boolean[][] visited, int numVisited) {
 		// Base case.
 		if (numVisited == n * n) {
-			return true;
+			Result result = new Result();
+			result.exists = true;
+			return result;
 		}
 
 		List<Point> validMoves = getValidMoves(i, j, n, visited);
 		for (Point move : validMoves) {
 			// Visit each reachable point as long as it hasn't been visited before.
 			visited[move.row][move.col] = true;
-			if (exploreRecursive(move.row, move.col, n, visited, numVisited + 1)) {
-				return true;
+			Result result = exploreRecursive(move.row, move.col, n, visited, numVisited + 1);
+			if (result.exists) {
+				result.solution.add(0, new Point(move.row, move.col));
+				return result;
 			}
 			// Nope the above exploration didn't work.
 			// Be sure to mark this point as not visited for other tries starting from here.
 			visited[move.row][move.col] = false;
 		}
-		return false;
+		return new Result();
 	}
 
+	// A move is valid if it exists within the bound of the board and it hasn't been
+	// visited yet.
 	private static List<Point> getValidMoves(int row, int col, int n, boolean[][] visited) {
 		ArrayList<Point> list = new ArrayList<>();
 		// Down right
@@ -106,7 +122,7 @@ class ExploreChessBoard {
 	}
 
 	public static void main(String[] args) {
-		explore(8);
+		explore(5);
 	}
 	
 }
